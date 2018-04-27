@@ -1,4 +1,16 @@
-ncs.modify_sentiment = function(list_element, weight.amplifier, weight.advconj){
+###############################################################################
+###############################################################################
+### Servant function
+### Modifies sentiment in listwise context cluster with valence shifters.
+### Used in ncs pipeline.
+### INPUT: list of context clusters + params
+### OUTPUT: vector of modified sentiments
+###############################################################################
+
+
+ncs.modify_sentiment = function(list_element
+                                , weight.amplifier
+                                , weight.advconj){
   list_element_df = list_element
   val_bin_checker = c(1,2,3,4) %in% list_element_df$valence_shifter
 

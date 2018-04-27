@@ -1,3 +1,13 @@
+###############################################################################
+###############################################################################
+### Servant function
+### Preprocessing for raw strings to contextualized list (list of context clusters).
+### Context size is determined by cluster lag and cluster lead
+### used in ncs.full pipeline.
+### INPUT: raw string + param
+### OUTPUT: list of context clusters
+###############################################################################
+
 library(lexicon)
 library(stringr)
 library(data.table)

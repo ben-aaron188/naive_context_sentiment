@@ -1,10 +1,15 @@
-rm(list = ls())
+###############################################################################
+###############################################################################
+### Master function
+### Modifies text column input to vectorized and scaled sentiments sensitive of valence shifters.
+### INPUT: text column + params
+### OUTPUT: dataframe with scaled sentiments of equal size
+###############################################################################
 
 setwd('/Users/bennettkleinberg/GitHub/naive_context_sentiment')
 source('./utils/ncs.preprocess.R')
 source('./utils/ncs.modify_sentiment.R')
 source('./utils/ncs.string.R')
-
 
 ncs.full = function(txt_input_col
                     , txt_id_col
@@ -12,6 +17,7 @@ ncs.full = function(txt_input_col
                     , transform_values = F
                     , context_size_lag = 2
                     , context_size_lead = 4
+                    , min_tokens = 10
 ){
 
   require(syuzhet)
@@ -25,17 +31,22 @@ ncs.full = function(txt_input_col
                         , ncol = length(txt_col)
   )
   for(i in 1:length(txt_col)){
-    print(paste('---> naive context sentiment extraction: ', txt_id_col[i], sep=""))
-    a = ncs.preprocess(string_input = txt_col[i]
-                       , cluster_lead = context_size_lead
-                       , cluster_lag = context_size_lag)
-    text.scored = ncs.string(a)
-    text.scored_binned = get_dct_transform(text.scored
-                                           , x_reverse_len=100
-                                           , low_pass_size = low_pass_filter_size
-                                           , scale_range = transform_values
-                                           , scale_vals = F)
-    empty_matrix[, i] = text.scored_binned
+    if(length(unlist(str_split(txt_col[i], ' '))) >= min_tokens) {
+      print(paste('---> naive context sentiment extraction: ', txt_id_col[i], sep=""))
+      a = ncs.preprocess(string_input = txt_col[i]
+                         , cluster_lead = context_size_lead
+                         , cluster_lag = context_size_lag)
+      text.scored = ncs.string(a)
+      text.scored_binned = get_dct_transform(text.scored
+                                             , x_reverse_len=100
+                                             , low_pass_size = low_pass_filter_size
+                                             , scale_range = transform_values
+                                             , scale_vals = F)
+      empty_matrix[, i] = text.scored_binned
+    } else {
+      empty_matrix[, i] = rep(NA, 100)
+    }
+
   }
   final_df = as.data.frame(empty_matrix)
   colnames(final_df) = txt_id_col
@@ -46,26 +57,14 @@ ncs.full = function(txt_input_col
 }
 
 
-?get_dct_transform
-
 #TODO
-#- write list function that calculates correct sentiment per cluster X
 #- speed issues?
 #- remove stopwords
 #- make NAs sparse
 #- saved?
 
 
-
-#full wrapper
-
-##inputs:
-###text columns
-###context
-###scaling
-###to lower?
-###punctuated?
-
+#USAGE EXAMPLE:
 # data = data.frame('text' = character(3)
 #                   , 'text_id' = character(3))
 # data$text = c('this is a super, great positive sentence and I just love doing this. Now this will be very negative and with disgusting words and ugly phrases'

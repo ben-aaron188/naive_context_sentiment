@@ -1,4 +1,11 @@
-setwd('/Users/bennettkleinberg/GitHub/naive_context_sentiment')
+###############################################################################
+###############################################################################
+### Master function
+### Modifies stringn input to vectorized and scaled sentiments sensitive of valence shifters.
+### INPUT: string + params
+### OUTPUT: vector with scaled sentiments of equal size
+###############################################################################
+
 source('./utils/ncs.preprocess.R')
 source('./utils/ncs.modify_sentiment.R')
 
@@ -29,3 +36,4 @@ ncs.string = function(list_of_clusters
 }
 
 
+###END
