@@ -77,14 +77,17 @@ ncs.modify_sentiment = function(list_element
 
         cluster_sent_val = sent_val*formulaval.negators*formulaval.amplifiers*formulaval.deamplifiers*formulaval.advconj_before*formulaval.advconj_after
 #STORED IN MEMORY FOR MULTIPLE SENTIMENTS?
+      } else if(is.na(list_element$sentiment[i])){
+        cluster_sent_val = 0
       }
     })
   } else {
 
     output_list = sapply(seq(1:nrow(list_element)), function(i){
-#FILL NAs WITH 0
       if(!is.na(list_element$sentiment[i])){
         sent_val = list_element$sentiment[i]
+      } else if(is.na(list_element$sentiment[i])){
+        sent_val = 0
       }
 
     })
@@ -93,3 +96,10 @@ ncs.modify_sentiment = function(list_element
 
   return(unlist(output_list))
 }
+
+
+#END
+
+#SET ZERO SENTIMENTS TO VALUES SO THAT SENTIMENTS = INDEX LENGTH!
+#AVOID CLUSTERING WHEN NO VALENCE SHIFTERS
+#DETERMINE WHICH SENTIMENT TO MODIFY
