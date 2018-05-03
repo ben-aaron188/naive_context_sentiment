@@ -7,6 +7,10 @@
 ### OUTPUT: vector of modified sentiments
 ###############################################################################
 
+#TODO:
+#SET ZERO SENTIMENTS TO VALUES SO THAT SENTIMENTS = INDEX LENGTH!
+#AVOID CLUSTERING WHEN NO VALENCE SHIFTERS
+#DETERMINE WHICH SENTIMENT TO MODIFY
 
 ncs.modify_sentiment = function(list_element
                                 , weight.amplifier
@@ -21,6 +25,7 @@ ncs.modify_sentiment = function(list_element
       negators_post = negators_pre = amplifiers_pre = amplifiers_post = deamplifiers_pre = deamplifiers_post = advconj_pre = advconj_post = 0
 
       if(!is.na(list_element$sentiment[i])){
+
         sent_val = list_element$sentiment[i]
         pre_sub_context = list_element[1:i,]
         pre_val_bin_checker = c(1,2,3,4) %in% pre_sub_context$valence_shifter
@@ -71,13 +76,13 @@ ncs.modify_sentiment = function(list_element
         formulaval.advconj_after = ifelse(n_advconj_after > 0, n_advconj_after*weight_advconj_after, 1)
 
         cluster_sent_val = sent_val*formulaval.negators*formulaval.amplifiers*formulaval.deamplifiers*formulaval.advconj_before*formulaval.advconj_after
-
+#STORED IN MEMORY FOR MULTIPLE SENTIMENTS?
       }
     })
   } else {
 
     output_list = sapply(seq(1:nrow(list_element)), function(i){
-
+#FILL NAs WITH 0
       if(!is.na(list_element$sentiment[i])){
         sent_val = list_element$sentiment[i]
       }
