@@ -7,14 +7,18 @@
 ###############################################################################
 
 #1. PREPROCESSING
+##accepts string input, constructs context cluster, and weighs sentiment
+##INPUT: string input + params on valence shifter weights and cluster size
+##OUTPUT: vector of transformed sentiments (or: dataframe - use this for debugging)
 ncs_preprocess = function(string_input
-                          , cluster_lead = 2
-                          , cluster_lag = 2
-                          , weight_negator = -1
-                          , weight_amplifier = 1.5
-                          , weight_deamplifier = 0.5
-                          , weight_advcon = 0.25
+                          , cluster_lead_ = 2
+                          , cluster_lag_ = 2
+                          , weight_negator_ = -1
+                          , weight_amplifier_ = 1.5
+                          , weight_deamplifier_ = 0.5
+                          , weight_advcon_ = 0.25
                           , return_df = F
+                          , verbose = F
                           ){
 
   require(stringr)
@@ -31,6 +35,7 @@ ncs_preprocess = function(string_input
   mod_string = str_replace_all(mod_string, "[.,;:!?]", "")
   mod_string = tolower(mod_string)
   mod_string = unlist(str_split(mod_string, " "))
+  mod_string = mod_string[nchar(mod_string) > 0]
 
   #transform to data table
   text.raw = data.table(text = mod_string
@@ -69,10 +74,10 @@ ncs_preprocess = function(string_input
   #3 = deamplifier
   #4 = adversative conjunction
   text.table$weights = ifelse(is.na(text.table$valence), 1,
-                              ifelse(text.table$valence == 1, weight_negator,
-                                     ifelse(text.table$valence == 2, weight_amplifier,
-                                            ifelse(text.table$valence == 3, weight_deamplifier,
-                                                   weight_advcon))))
+                              ifelse(text.table$valence == 1, weight_negator_,
+                                     ifelse(text.table$valence == 2, weight_amplifier_,
+                                            ifelse(text.table$valence == 3, weight_deamplifier_,
+                                                   weight_advcon_))))
 
   text.table$sentiment_score = text.table$sentiment
   text.table$sentiment_score[is.na(text.table$sentiment_score)] = 0
@@ -80,20 +85,29 @@ ncs_preprocess = function(string_input
 
   for(i in 1:length(text.table$sentiment_score)){
     if(text.table$sentiment_score[i] != 0){
-      cluster_boundary_lower = ifelse((i-cluster_lead) > 0, (i-cluster_lead), 1)
-      cluster_boundary_upper = ifelse((i+cluster_lag) < length(text.table$sentiment_score), (i+cluster_lag), length(text.table$sentiment_score))
+      cluster_boundary_lower = ifelse((i-cluster_lead_) > 0, (i-cluster_lead_), 1)
+      cluster_boundary_upper = ifelse((i+cluster_lag_) < length(text.table$sentiment_score), (i+cluster_lag_), length(text.table$sentiment_score))
       a = text.table$weights[cluster_boundary_lower:cluster_boundary_upper]
-      a[(1+cluster_lead)] = text.table$sentiment_score[i]
+      a[(1+cluster_lead_)] = text.table$sentiment_score[i]
       text.table$sentiment_score_mod[i] = prod(a, na.rm = T)
-      print(paste('modified sentiment ', text.table$text[i], ': ',  text.table$sentiment_score[i], ' --> ', prod(a), sep=""))
+
+      if(verbose == T){
+        print(paste('sentiment change for "', text.table$text[i], '": ',  text.table$sentiment_score[i], ' --> ', prod(a), sep=""))
+
+      }
+
     }
   }
 
   if(return_df == T){
-    new_text.table = text.table[, c(1:4, 7,8)]
+    new_text.table = text.table
   } else if(return_df == F){
     new_text.table = text.table$sentiment_score_mod
   }
+
+  modified_sentiment_indices = which(text.table$sentiment_score != text.table$sentiment_score_mod)
+  prop_changed = round(length(modified_sentiment_indices)/length(text.table$sentiment_score_mod), 2)
+  print(paste('Proportion of total modified sentiments: ', prop_changed, sep=""))
 
   return(new_text.table)
 }
@@ -101,6 +115,9 @@ ncs_preprocess = function(string_input
 #end of preprocessing
 
 #2. full version: iterative over df column
+##accepts input column, uses ncs_preprocessing, transforms string inputs to dct transformed values
+##INPUT: string input column, id column + params
+##OUTPUT: dataframe of dims bins*length(txt_input_col)
 ncs_full = function(txt_input_col
                     , txt_id_col
                     , low_pass_filter_size = 5
@@ -113,6 +130,8 @@ ncs_full = function(txt_input_col
                     , weight_amplifier = 1.5
                     , weight_deamplifier = 0.5
                     , weight_advcon = 0.25
+                    , bins = 100
+                    , verbose = F
 ){
 
   require(syuzhet)
@@ -122,29 +141,30 @@ ncs_full = function(txt_input_col
 
   txt_col = txt_input_col
   empty_matrix = matrix(data = 0
-                        , nrow = 100
+                        , nrow = bins
                         , ncol = length(txt_col)
   )
   for(i in 1:length(txt_col)){
     if(length(unlist(str_split(txt_col[i], ' '))) >= min_tokens) {
-      print(paste('---> naive context sentiment extraction: ', txt_id_col[i], sep=""))
+      print(paste('Performing NCS extraction: ', txt_id_col[i], '/', length(txt_id_col),  sep=""))
       a = ncs_preprocess(string_input = txt_col[i]
-                         , cluster_lead = cluster_lead
-                         , cluster_lag = cluster_lag
-                         , weight_negator = weight_negator
-                         , weight_amplifier = weight_amplifier
-                         , weight_deamplifier = weight_deamplifier
-                         , weight_advcon = weight_advcon
-                         , return_df = F)
+                         , cluster_lead_ = cluster_lead
+                         , cluster_lag_ = cluster_lag
+                         , weight_negator_ = weight_negator
+                         , weight_amplifier_ = weight_amplifier
+                         , weight_deamplifier_ = weight_deamplifier
+                         , weight_advcon_ = weight_advcon
+                         , return_df = F
+                         , verbose = verbose)
       text.scored = a
       text.scored_binned = get_dct_transform(text.scored
-                                             , x_reverse_len=100
+                                             , x_reverse_len=bins
                                              , low_pass_size = low_pass_filter_size
                                              , scale_range = transform_values
                                              , scale_vals = normalize_values)
       empty_matrix[, i] = text.scored_binned
     } else {
-      empty_matrix[, i] = rep(NA, 100)
+      empty_matrix[, i] = rep(NA, bins)
     }
 
   }
@@ -159,6 +179,7 @@ ncs_full = function(txt_input_col
 #end of full
 
 #3. USAGE EXAMPLE
+##for texts from source, use the function: https://github.com/ben-aaron188/r_helper_functions/blob/master/txt_df_from_dir.R
 # data = data.frame('text' = character(3)
 #                   , 'text_id' = character(3))
 # data$text = c('this is a super, great positive sentence and I just love doing this. Now this will be very negative and with disgusting words and ugly phrases'
