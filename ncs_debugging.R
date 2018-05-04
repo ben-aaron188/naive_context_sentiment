@@ -23,8 +23,8 @@ View(text_data)
 #perform open NCS processing (this returns a dataframe to see the processing steps more clearly)
 system.time(
   ncs_preprocess(string_input = text_data$text[1]
-                 , cluster_lead_ = 2
-                 , cluster_lag_ = 4
+                 , cluster_lower_ = 2
+                 , cluster_upper_ = 4
                  , return_df = T
                  # WEIGHTS ARE SET TO DEFAULT
                  # , weight_negator_
@@ -36,8 +36,8 @@ system.time(
 )
 
 text_processed = ncs_preprocess(string_input = text_data$text[1]
-                                , cluster_lead_ = 2
-                                , cluster_lag_ = 2
+                                , cluster_lower_ = 2
+                                , cluster_upper_ = 2
                                 , return_df = T
                                 # WEIGHTS ARE SET TO DEFAULT
                                 # , weight_negator_
@@ -55,8 +55,8 @@ binned_sentiments = ncs_full(txt_input_col = text_data$text
                              , transform_values = T
                              , normalize_values = F
                              , min_tokens = 10
-                             , cluster_lead = 2
-                             , cluster_lag = 2
+                             , cluster_lower = 2
+                             , cluster_upper = 2
                              # WEIGHTS ARE SET TO DEFAULT
                              # , weight_negator
                              # , weight_amplifier

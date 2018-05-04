@@ -11,8 +11,8 @@
 ##INPUT: string input + params on valence shifter weights and cluster size
 ##OUTPUT: vector of transformed sentiments (or: dataframe - use this for debugging)
 ncs_preprocess = function(string_input
-                          , cluster_lead_ = 2
-                          , cluster_lag_ = 2
+                          , cluster_lower_ = 2
+                          , cluster_upper_ = 2
                           , weight_negator_ = -1
                           , weight_amplifier_ = 1.5
                           , weight_deamplifier_ = 0.5
@@ -85,10 +85,10 @@ ncs_preprocess = function(string_input
 
   for(i in 1:length(text.table$sentiment_score)){
     if(text.table$sentiment_score[i] != 0){
-      cluster_boundary_lower = ifelse((i-cluster_lead_) > 0, (i-cluster_lead_), 1)
-      cluster_boundary_upper = ifelse((i+cluster_lag_) < length(text.table$sentiment_score), (i+cluster_lag_), length(text.table$sentiment_score))
+      cluster_boundary_lower = ifelse((i-cluster_lower_) > 0, (i-cluster_lower_), 1)
+      cluster_boundary_upper = ifelse((i+cluster_upper_) < length(text.table$sentiment_score), (i+cluster_upper_), length(text.table$sentiment_score))
       a = text.table$weights[cluster_boundary_lower:cluster_boundary_upper]
-      a[(1+cluster_lead_)] = text.table$sentiment_score[i]
+      a[(1+cluster_lower_)] = text.table$sentiment_score[i]
       text.table$sentiment_score_mod[i] = prod(a, na.rm = T)
 
       if(verbose == T){
@@ -124,8 +124,8 @@ ncs_full = function(txt_input_col
                     , transform_values = T
                     , normalize_values = F
                     , min_tokens = 10
-                    , cluster_lead = 2
-                    , cluster_lag = 2
+                    , cluster_lower = 2
+                    , cluster_upper = 2
                     , weight_negator = -1
                     , weight_amplifier = 1.5
                     , weight_deamplifier = 0.5
@@ -148,8 +148,8 @@ ncs_full = function(txt_input_col
     if(length(unlist(str_split(txt_col[i], ' '))) >= min_tokens) {
       print(paste('Performing NCS extraction: ', txt_id_col[i], '/', length(txt_id_col),  sep=""))
       a = ncs_preprocess(string_input = txt_col[i]
-                         , cluster_lead_ = cluster_lead
-                         , cluster_lag_ = cluster_lag
+                         , cluster_lower_ = cluster_lower
+                         , cluster_upper_ = cluster_upper
                          , weight_negator_ = weight_negator
                          , weight_amplifier_ = weight_amplifier
                          , weight_deamplifier_ = weight_deamplifier
@@ -193,8 +193,8 @@ ncs_full = function(txt_input_col
 #          , transform_values = T
 #          , normalize_values = F
 #          , min_tokens = 10
-#          , cluster_lead = 2
-#          , cluster_lag = 2
+#          , cluster_lower = 2
+#          , cluster_upper = 2
 #          )
 
 ### END

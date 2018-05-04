@@ -14,7 +14,7 @@ require(sentimentr)
 # data("course_evaluations")
 # data = course_evaluations
 # data$id = 1:nrow(data)
-
+setwd('/Users/bennettkleinberg/GitHub/naive_context_sentiment')
 data = txt_df_from_dir(dirpath = './sample_data'
                        , recursive = F
                        , include_processed = F
@@ -67,8 +67,8 @@ snp.ncs = ncs_full(txt_input_col = data_np$text
                    , low_pass_filter_size = 5
                    , normalize_values = F
                    , transform_values = T
-                   , cluster_lead = 2
-                   , cluster_lag = 2
+                   , cluster_lower = 2
+                   , cluster_upper = 2
                    , verbose = T
                    )
 
@@ -133,8 +133,8 @@ ase_df = data.frame('text' = paste(ase, collapse = ' ')
                     , id = 1)
 ncs_binned = ncs_full(ase_df$text
                       , ase_df$id
-                      , cluster_lead = 4
-                      , cluster_lag = 2)
+                      , cluster_lower = 4
+                      , cluster_upper = 2)
 
 
 plot(x = 1:100
@@ -150,18 +150,18 @@ points(sentimentr_binned
 #note how sensitive these methods are to cluster size
 ncs_binned_1_1 = ncs_full(ase_df$text
                           , ase_df$id
-                          , cluster_lead = 1
-                          , cluster_lag = 1)
+                          , cluster_lower = 1
+                          , cluster_upper = 1)
 ncs_binned_2_2 = ncs_full(ase_df$text
                       , ase_df$id
-                      , cluster_lead = 2
-                      , cluster_lag = 2)
+                      , cluster_lower = 2
+                      , cluster_upper = 2)
 ncs_binned_3_3 = ncs_full(ase_df$text
                           , ase_df$id
-                          , cluster_lead = 3
-                          , cluster_lag = 3)
+                          , cluster_lower = 3
+                          , cluster_upper = 3)
 
-
+prod(c(-1, -1, 0.75, 1, 1))
 par(mfrow=c(2,2))
 plot(x = 1:100
      , y = ncs_binned$`1`
