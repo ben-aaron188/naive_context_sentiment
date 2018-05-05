@@ -139,14 +139,30 @@ ncs_full = function(txt_input_col
   currentwd = getwd()
   t1 = Sys.time()
 
+  if(weight_negator < weight_deamplifier){
+    print('###################################################')
+    print(paste('Initialized ____'))
+    print(paste('Cluster size: -', cluster_lower, " : +", cluster_upper, sep=""))
+    print(paste('Negator weight: ', weight_negator, sep=""))
+    print(paste('Amplifier weight: ', weight_amplifier, sep=""))
+    print(paste('De-amplifier weight: ', weight_deamplifier, sep=""))
+    print(paste('Adv. conj. weight: ', weight_advcon, sep=""))
+    print('###################################################')
+  } else {
+    print('WARNING: Negator weight must be lower than deamplifier weight')
+  }
+
+
   txt_col = txt_input_col
+  id_col = txt_id_col
   empty_matrix = matrix(data = 0
                         , nrow = bins
                         , ncol = length(txt_col)
   )
   for(i in 1:length(txt_col)){
     if(length(unlist(str_split(txt_col[i], ' '))) >= min_tokens) {
-      print(paste('Performing NCS extraction: ', txt_id_col[i], '/', length(txt_id_col),  sep=""))
+      print(paste('Performing NCS extraction: ', id_col[i], sep=""))
+      print(paste('- - - - - - - - - - ', i, '/', length(id_col),  sep=""))
       a = ncs_preprocess(string_input = txt_col[i]
                          , cluster_lower_ = cluster_lower
                          , cluster_upper_ = cluster_upper
@@ -163,6 +179,7 @@ ncs_full = function(txt_input_col
                                              , scale_range = transform_values
                                              , scale_vals = normalize_values)
       empty_matrix[, i] = text.scored_binned
+      print('==================== NEXT ====================')
     } else {
       empty_matrix[, i] = rep(NA, bins)
     }
@@ -198,3 +215,6 @@ ncs_full = function(txt_input_col
 #          )
 
 ### END
+
+#TODO
+#- progress bar
