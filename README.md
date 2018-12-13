@@ -1,7 +1,7 @@
 # Naive context sentiment analysis
 
 
-## Aim:
+### Aim
 This R script should address the problem that several sentiment analysis scripts ignore valence
 shifters (e.g. "hardly difficult", "not great at all"). For a great outline of that issue, you can
 see [trinker's](https://github.com/trinker) argument and `sentimentr` package
@@ -19,7 +19,7 @@ from blogs where punctuation is not necessarily a given)
 - or because they are very brief: Twitter
 data, for example, even if properly annotated for sentence-boundary-disambiguation, would return one or two sentiment values.
 
-## Why "naive context sentiment analysis"
+### Why "naive context sentiment analysis"
 Our approach is based on the `sentimentr` idea of creating a "cluster" around sentiments.
 Within that cluster, we then look for valence shifters (taken from the brilliant [`lexicon`](https://github.com/trinker/lexicon) package), weight the original sentiment, and returns a vector of sentiments of the size **v** (where v = number of tokens that are not punctuation marks).
 
@@ -27,3 +27,10 @@ Our approach does not rely on sentences and punctation and is therefore "naive" 
 
 
 **Note:** We are still developing this tool.
+
+### Development wish list
+
+- speed improvements (in particular in the length standardisation, e.g. switch to different discrete cosine transformation or Fourier transformation)
+- multi-dimensionality implementation for other lexicon-based approaches (needed: "lexicon" as function parameter)
+- multi-language support (needs lexicon-databases in different languages)
+- python implementation
