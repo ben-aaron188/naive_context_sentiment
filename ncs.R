@@ -28,11 +28,11 @@ ncs_preprocess = function(string_input
   require(data.table)
   require(lexicon)
 
-  if(return_df == F){
-    print('Function will return a vector of modified sentiments')
-  } else if(return_df == T){
-    print('Function will return a dataframe')
-  }
+  # if(return_df == F){
+  #   print('Function will return a vector of modified sentiments')
+  # } else if(return_df == T){
+  #   print('Function will return a dataframe')
+  # }
 
   mod_string = paste(string_input, collapse = ' ')
   mod_string = str_replace_all(mod_string, "[.,;:!?]", "")
@@ -157,6 +157,64 @@ ncs_preprocess = function(string_input
     text.table$score[is.na(text.table$score)] = 0
     text.table$score_mod = text.table$score
     
+  } else if (lexicon_ == 'slangsd'){
+    
+    #load hash tables OPTIMIZE!
+    hash.sentiment = lexicon::hash_sentiment_slangsd
+    hash.valence_shifters = lexicon::hash_valence_shifters
+    
+    #locate sentiments
+    text.sentiment = merge(text.raw
+                           , hash.sentiment
+                           , by.x = 'text'
+                           , by.y = 'x'
+                           , all.x = TRUE)
+    text.sentiment = text.sentiment[order(index),]
+    
+    #locate valence shifters
+    text.valence_shifters = merge(text.sentiment
+                                  , hash.valence_shifters
+                                  , by.x = 'text'
+                                  , by.y = 'x'
+                                  , all.x = TRUE)
+    text.valence_shifters = text.valence_shifters[order(index),]
+    
+    text.table = text.valence_shifters
+    
+    #recode valence shifters
+    names(text.table)[3:4] = c('sentiment'
+                               , 'valence'
+    )
+    #key to valence shifters:
+    #1 = negator
+    #2 = amplifier
+    #3 = deamplifier
+    #4 = adversative conjunction
+    text.table$weights = ifelse(is.na(text.table$valence), 1,
+                                ifelse(text.table$valence == 1, weight_negator_,
+                                       ifelse(text.table$valence == 2, weight_amplifier_,
+                                              ifelse(text.table$valence == 3, weight_deamplifier_,
+                                                     weight_advcon_))))
+    
+    text.table$score = text.table$sentiment
+    text.table$score[is.na(text.table$score)] = 0
+    text.table$score_mod = text.table$score
+    
+    for(i in 1:length(text.table$score)){
+      if(text.table$score[i] != 0){
+        cluster_boundary_lower = ifelse((i-cluster_lower_) > 0, (i-cluster_lower_), 1)
+        cluster_boundary_upper = ifelse((i+cluster_upper_) < length(text.table$score), (i+cluster_upper_), length(text.table$score))
+        a = text.table$weights[cluster_boundary_lower:cluster_boundary_upper]
+        a[(1+cluster_lower_)] = text.table$score[i]
+        text.table$score_mod[i] = prod(a, na.rm = T)
+        
+        if(verbose == T){
+          print(paste('sentiment change for "', text.table$text[i], '": ',  text.table$score[i], ' --> ', prod(a), sep=""))
+        }
+        
+      }
+    }
+    
   }
   
   if(return_df == T){
@@ -200,9 +258,10 @@ ncs_full = function(txt_input_col
   currentwd = getwd()
   t1 = Sys.time()
 
-  if((lexicon %in% c('sentiment', 'concreteness', 'racialslurs', 'profanity'))){
+  if((lexicon %in% c('sentiment', 'concreteness', 'racialslurs', 'profanity', 'slangsd'))){
     
     if(lexicon == 'sentiment'){
+      print(paste('Using standard sentiment lexicon'))
       if(weight_negator < weight_deamplifier){
         print('###################################################')
         print(paste('Initialized ____'))
@@ -215,6 +274,11 @@ ncs_full = function(txt_input_col
       } else {
         print('WARNING: Negator weight must be lower than deamplifier weight')
       }  
+    } else if(lexicon == 'slangsd'){
+      print('###################################################')
+      print(paste('Initialized ____'))
+      print(paste('Using slangsd lexicon'))
+      print('###################################################')
     } else if(lexicon == 'concreteness'){
       print('###################################################')
       print(paste('Initialized ____'))
