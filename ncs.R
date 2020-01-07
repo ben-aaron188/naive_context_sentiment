@@ -251,6 +251,7 @@ ncs_full = function(txt_input_col
                     , weight_advcon = 0.25
                     , bins = 100
                     , verbose = F
+                    , bin_transform = T
 ){
 
   require(syuzhet)
@@ -296,41 +297,78 @@ ncs_full = function(txt_input_col
       print('###################################################')
     }
     
-    txt_col = txt_input_col
-    id_col = txt_id_col
-    empty_matrix = matrix(data = 0
-                          , nrow = bins
-                          , ncol = length(txt_col)
-    )
-    for(i in 1:length(txt_col)){
-      if(length(unlist(str_split(txt_col[i], ' '))) >= min_tokens) {
-        print(paste('Performing NCS extraction: ', id_col[i], sep=""))
-        print(paste('- - - - - - - - - - ', i, '/', length(id_col),  sep=""))
-        a = ncs_preprocess(string_input = txt_col[i]
-                           , lexicon_ = lexicon
-                           , cluster_lower_ = cluster_lower
-                           , cluster_upper_ = cluster_upper
-                           , weight_negator_ = weight_negator
-                           , weight_amplifier_ = weight_amplifier
-                           , weight_deamplifier_ = weight_deamplifier
-                           , weight_advcon_ = weight_advcon
-                           , return_df = F
-                           , verbose = verbose)
-        text.scored = a
-        text.scored_binned = get_dct_transform(text.scored
-                                               , x_reverse_len=bins
-                                               , low_pass_size = low_pass_filter_size
-                                               , scale_range = transform_values
-                                               , scale_vals = normalize_values)
-        empty_matrix[, i] = text.scored_binned
-        print('==================== NEXT ====================')
-      } else {
-        empty_matrix[, i] = rep(NA, bins)
+    if(bin_transform == T){
+      txt_col = txt_input_col
+      id_col = txt_id_col
+      empty_matrix = matrix(data = 0
+                            , nrow = bins
+                            , ncol = length(txt_col)
+      )
+      for(i in 1:length(txt_col)){
+        if(length(unlist(str_split(txt_col[i], ' '))) >= min_tokens) {
+          print(paste('Performing NCS extraction: ', id_col[i], sep=""))
+          print(paste('- - - - - - - - - - ', i, '/', length(id_col),  sep=""))
+          a = ncs_preprocess(string_input = txt_col[i]
+                             , lexicon_ = lexicon
+                             , cluster_lower_ = cluster_lower
+                             , cluster_upper_ = cluster_upper
+                             , weight_negator_ = weight_negator
+                             , weight_amplifier_ = weight_amplifier
+                             , weight_deamplifier_ = weight_deamplifier
+                             , weight_advcon_ = weight_advcon
+                             , return_df = F
+                             , verbose = verbose)
+          text.scored = a
+          text.scored_binned = get_dct_transform(text.scored
+                                                 , x_reverse_len=bins
+                                                 , low_pass_size = low_pass_filter_size
+                                                 , scale_range = transform_values
+                                                 , scale_vals = normalize_values)
+          empty_matrix[, i] = text.scored_binned
+          print('==================== NEXT ====================')
+        } else {
+          empty_matrix[, i] = rep(NA, bins)
+        }
+        
+      }
+      final_df = as.data.frame(empty_matrix)
+      colnames(final_df) = txt_id_col
+    } else if(bin_transform == F){
+      
+      print('.. No length standardisation - returning list ..')
+      
+      txt_col = txt_input_col
+      id_col = txt_id_col
+      empty_matrix = list()
+      
+      for(i in 1:length(txt_col)){
+        if(length(unlist(str_split(txt_col[i], ' '))) >= min_tokens) {
+          print(paste('Performing NCS extraction: ', id_col[i], sep=""))
+          print(paste('- - - - - - - - - - ', i, '/', length(id_col),  sep=""))
+          a = ncs_preprocess(string_input = txt_col[i]
+                             , lexicon_ = lexicon
+                             , cluster_lower_ = cluster_lower
+                             , cluster_upper_ = cluster_upper
+                             , weight_negator_ = weight_negator
+                             , weight_amplifier_ = weight_amplifier
+                             , weight_deamplifier_ = weight_deamplifier
+                             , weight_advcon_ = weight_advcon
+                             , return_df = F
+                             , verbose = verbose)
+          text.scored = a
+          empty_matrix[[i]] = text.scored
+          print('==================== NEXT ====================')
+        } else {
+          empty_matrix[[i]] = NA
+        }
+        
       }
       
+      final_df = empty_matrix
+      
     }
-    final_df = as.data.frame(empty_matrix)
-    colnames(final_df) = txt_id_col
+    
+    
     t2 = Sys.time()
     print(t2-t1)
     setwd(currentwd)
@@ -346,6 +384,7 @@ ncs_full = function(txt_input_col
 
 #3. Changelog
 # 14 Dec. 2018: added new dimensions with lexicon parameter
+# 07 Jan 2020: added argument for length standardisation
 
 #4. USAGE EXAMPLE
 ##for texts from source, use the function: https://github.com/ben-aaron188/r_helper_functions/blob/master/txt_df_from_dir.R
@@ -355,7 +394,7 @@ ncs_full = function(txt_input_col
 #               , 'here we begin in a bad, bad, and ugly way but quickly become overly positive for all the great things this exciting code can do'
 #               , "I haven't been sad in a long time. I am extremely happy today. It's a good day. But suddenly I'm only a little bit happy. Then I'm not happy at all. In fact, I am now the least happy person on the planet. There is no happiness left in me. Wait, it's returned! I don't feel so bad after all!")
 # data$text_id = c('text1', 'text2', 'text3')
-#
+# 
 # ncs_full(txt_input_col = data$text
 #          , txt_id_col = data$text_id
 #          , lexicon = 'sentiment'
@@ -365,6 +404,7 @@ ncs_full = function(txt_input_col
 #          , min_tokens = 10
 #          , cluster_lower = 2
 #          , cluster_upper = 2
+#          , bin_transform = T
 #          )
 
 ### END
